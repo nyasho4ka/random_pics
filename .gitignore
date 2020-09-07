@@ -1,0 +1,5 @@
+# config ignore
+/config/**
+
+# media
+/random_pics/media/**
