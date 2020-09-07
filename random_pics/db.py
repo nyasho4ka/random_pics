@@ -68,6 +68,10 @@ class ImageNotFound(Exception):
     pass
 
 
+class ImageLimitExceeded(Exception):
+    pass
+
+
 class ConfirmError(Exception):
     pass
 
@@ -101,7 +105,7 @@ async def service_last_checkout_update(conn, service_name):
     image_id = await get_last_image_id(conn)
     service_last_checkout_id = await get_service_last_checkout_id(conn, service_name)
 
-    if (service_last_checkout_id - image_id) > 1:
+    if (service_last_checkout_id - image_id) >= 1:
         raise ConfirmError("image receipt can't be confirmed. unreachable index")
 
     await conn.execute(
@@ -133,3 +137,28 @@ async def get_service_last_checkout_id(conn, service_name):
                               format(service_name=service_name))
 
     return service_record.get('last_checkout_id')
+
+
+async def add_image(conn, image_name):
+    count = await image_count(conn)
+    if count < 6:
+        await insert_image(conn, image_name)
+    else:
+        raise ImageLimitExceeded('too much images!')
+
+
+async def image_count(conn):
+    result = await conn.execute(
+        image.select()
+    )
+    count = result.rowcount
+    return count
+
+
+async def insert_image(conn, image_name):
+    await conn.execute(
+        image.insert()
+        .values(
+            path=image_name
+        )
+    )
