@@ -91,26 +91,25 @@ async def get_next_image(conn, service_name):
 
     result = await conn.execute(
         image.select()
-        .where(image.c.id >= last_id)
-        .order_by(image.c.id.desc())
+        .where(image.c.id > last_id)
+        .order_by(image.c.id)
+        .limit(1)
     )
 
-    image_record = await result.first()
-    if image_record is None:
+    current_image_record = await result.first()
+    if current_image_record is None:
         raise ImageNotFound('there is no new image yet')
-    return image_record.get('id'), image_record.get('path')
+
+    current_image_id = current_image_record.get('id')
+    current_image_path = current_image_record.get('path')
+
+    return current_image_id, current_image_path
 
 
-async def service_last_checkout_update(conn, service_name):
-    image_id = await get_last_image_id(conn)
-    service_last_checkout_id = await get_service_last_checkout_id(conn, service_name)
-
-    if (service_last_checkout_id - image_id) >= 1:
-        raise ConfirmError("image receipt can't be confirmed. unreachable index")
-
+async def service_last_checkout_update(conn, service_name, last_id):
     await conn.execute(
         service.update()
-        .values(last_checkout_id=service.c.last_checkout_id + 1)
+        .values(last_checkout_id=last_id)
         .where(service.c.name == service_name)
     )
 
