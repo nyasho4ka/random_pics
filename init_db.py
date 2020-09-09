@@ -13,10 +13,13 @@ def create_tables(engine):
 
 def default_service(engine):
     conn = engine.connect()
+
+    name, address = config['default_service']['name'], config['default_service']['address']
+
     conn.execute(service.insert(), [
         {
-            'name': 'centurion',
-            'address': 'http://94.41.84.170:8000/'
+            'name': name,
+            'address': address,
         },
     ])
     conn.close()

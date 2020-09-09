@@ -1,6 +1,7 @@
 import db
 import json
 import pathlib
+from settings import config
 from aiohttp import web
 
 
@@ -26,7 +27,7 @@ class GetNextImageView(web.View):
             else:
                 response = {
                     'id': current_id,
-                    'path': str('http://94.41.84.170:5000' / pathlib.Path('media') / path),
+                    'path': str(config['settings']['address'] / pathlib.Path('media') / path),
                 }
             return web.json_response(text=json.dumps(response))
 
