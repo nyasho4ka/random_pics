@@ -1,19 +1,45 @@
-import db
 import uuid
 import asyncio
 import aiohttp
 import random
-from settings import config
+
+from random_pics import db
+from random_pics.settings import config
 
 GOOGLE_SEARCH_API_URL = 'https://www.googleapis.com/customsearch/v1'
 CATEGORIES = config['google_search_api']['categories']
 
 
-class PeriodicImageRequest:
-    def __init__(self, app):
+class BaseTask:
+    def __init__(self, app, task_manager):
         self.app = app
         self.task = None
+        self.task_manager = task_manager
 
+    @classmethod
+    def as_task(cls, app, task_manager):
+        """
+        Representation of any Class Based Task
+        :param app:
+        :param task_manager:
+        :return:
+        """
+        coro = cls(app, task_manager)
+        task = asyncio.create_task(coro())
+        coro.task = task
+        return task
+
+    def __call__(self, *args, **kwargs):
+        """
+        Should return coroutine
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        raise NotImplemented
+
+
+class PeriodicImageRequest(BaseTask):
     async def __call__(self, *args, **kwargs):
         async with aiohttp.ClientSession() as session:
             while True:
@@ -38,7 +64,8 @@ class PeriodicImageRequest:
                         await db.add_image(conn, image_name)
                         print('SUCCESS')
                     except db.ImageLimitExceeded as e:
-                        await start_background_image_check(self.app)
+                        print('ПИЗДЕЦ')
+                        await self.task_manager.start_background_task('periodic_image_count_check', self.app)
                         self.task.cancel()
 
     async def download_image(self, session, image, image_name):
@@ -53,11 +80,7 @@ class PeriodicImageRequest:
         resp.close()
 
 
-class PeriodicImageCountCheck:
-    def __init__(self, app):
-        self.app = app
-        self.task = None
-
+class PeriodicImageCountCheck(BaseTask):
     async def __call__(self, *args, **kwargs):
         async with self.app['db'].acquire() as conn:
             while True:
@@ -67,19 +90,5 @@ class PeriodicImageCountCheck:
                     print('ALLOW TO DOWNLOAD NEW IMAGES! Image Count: {}'
                           .format(count))
                     self.task.cancel()
-                    await start_background_image_request(self.app)
+                    await self.task_manager.start_background_task(self.app)
                 print('NOT YET')
-
-
-async def start_background_image_request(app):
-    coro = PeriodicImageRequest(app)
-    task = asyncio.create_task(coro())
-    coro.task = task
-    app['periodic_image_request'] = task
-
-
-async def start_background_image_check(app):
-    coro = PeriodicImageCountCheck(app)
-    task = asyncio.create_task(coro())
-    coro.task = task
-    app['check_images'] = task
