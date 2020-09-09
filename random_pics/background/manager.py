@@ -5,6 +5,14 @@ from random_pics.background import tasks
 
 
 class BackgroundTaskManager:
+    _instance = None
+
+    @classmethod
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(*args, **kwargs)
+        return cls._instance
+
     def __init__(self):
         self.table = self.__init_table()
         self.current_task_name = None
