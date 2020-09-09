@@ -19,10 +19,15 @@ class GetNextImageView(web.View):
                     'result': str(e)
                 }
                 return web.json_response(text=json.dumps(response))
-            response = {
-                'id': current_id,
-                'path': str('http://94.41.84.170' / pathlib.Path('media') / path),
-            }
+            except db.ServiceNotFound as e:
+                response = {
+                    'result': str(e)
+                }
+            else:
+                response = {
+                    'id': current_id,
+                    'path': str('http://94.41.84.170:5000' / pathlib.Path('media') / path),
+                }
             return web.json_response(text=json.dumps(response))
 
     def service_not_found(self):

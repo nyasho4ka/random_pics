@@ -87,6 +87,8 @@ async def get_next_image(conn, service_name):
         .where(service.c.name == service_name))
 
     service_record = await result.first()
+    if service_record is None:
+        raise ServiceNotFound('there is no any service with {} in database'.format(service_name))
     last_id = service_record.get('last_checkout_id')
 
     result = await conn.execute(
