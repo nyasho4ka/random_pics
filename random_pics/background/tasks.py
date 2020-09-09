@@ -6,7 +6,7 @@ import random
 from random_pics import db
 from random_pics.settings import config
 
-GOOGLE_SEARCH_API_URL = 'https://www.googleapis.com/customsearch/v1'
+GOOGLE_SEARCH_API_URL = config['google_search_api']['url']
 CATEGORIES = config['google_search_api']['categories']
 
 
@@ -25,11 +25,11 @@ class BaseTask:
         :return:
         """
         coro = cls(app, task_manager)
-        task = asyncio.create_task(coro())
+        task = asyncio.create_task(coro.run())
         coro.task = task
         return task
 
-    def __call__(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         """
         Should return coroutine
         :param args:
@@ -40,7 +40,7 @@ class BaseTask:
 
 
 class PeriodicImageRequest(BaseTask):
-    async def __call__(self, *args, **kwargs):
+    async def run(self, *args, **kwargs):
         async with aiohttp.ClientSession() as session:
             while True:
                 params = self.get_params()
@@ -64,7 +64,7 @@ class PeriodicImageRequest(BaseTask):
                         await db.add_image(conn, image_name)
                         print('SUCCESS')
                     except db.ImageLimitExceeded as e:
-                        print('ПИЗДЕЦ')
+                        print(f'{e}')
                         await self.task_manager.start_background_task('periodic_image_count_check', self.app)
                         self.task.cancel()
 
@@ -81,7 +81,7 @@ class PeriodicImageRequest(BaseTask):
 
 
 class PeriodicImageCountCheck(BaseTask):
-    async def __call__(self, *args, **kwargs):
+    async def run(self, *args, **kwargs):
         async with self.app['db'].acquire() as conn:
             while True:
                 count = await db.image_count(conn)
