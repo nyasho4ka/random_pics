@@ -1,5 +1,6 @@
 # config ignore
 /config/
+!/config/logger.yaml
 
 # media
 /random_pics/media/
