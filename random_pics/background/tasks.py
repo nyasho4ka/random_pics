@@ -2,9 +2,11 @@ import uuid
 import asyncio
 import aiohttp
 import random
-
+import logging
 from random_pics import db
 from random_pics.settings import config
+
+logger = logging.getLogger('')
 
 GOOGLE_SEARCH_API_URL = config['google_search_api']['url']
 CATEGORIES = config['google_search_api']['categories']

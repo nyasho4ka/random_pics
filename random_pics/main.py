@@ -1,10 +1,13 @@
 import aiohttp_jinja2
 import jinja2
+import logging.config
 from aiohttp import web
 from random_pics.routes import setup_routes
-from random_pics.settings import config, BASE_DIR
+from random_pics.settings import config, logger_config, BASE_DIR
 from random_pics.db import init_pg, close_pg
 from random_pics.background.manager import background_task_manager
+
+logging.config.dictConfig(logger_config)
 
 
 app = web.Application()
