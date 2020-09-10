@@ -1,6 +1,6 @@
+import logging.config
 import aiohttp_jinja2
 import jinja2
-import logging.config
 from aiohttp import web
 from random_pics.routes import setup_routes
 from random_pics.settings import config, logger_config, BASE_DIR

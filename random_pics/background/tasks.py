@@ -6,7 +6,8 @@ import logging
 from random_pics import db
 from random_pics.settings import config
 
-logger = logging.getLogger('')
+logger = logging.getLogger('dev')
+# logger.setLevel(logging.DEBUG)
 
 GOOGLE_SEARCH_API_URL = config['google_search_api']['url']
 CATEGORIES = config['google_search_api']['categories']
@@ -52,6 +53,7 @@ class PeriodicImageRequest(BaseTask):
     def get_params(self):
         params = config['google_search_api']['query_params']
         params.update({'q': random.choice(CATEGORIES)})
+        logger.debug(f'[TASKS] {params}')
         return params
 
     async def image_request(self, session, params):
@@ -60,13 +62,13 @@ class PeriodicImageRequest(BaseTask):
             async with self.app['db'].acquire() as conn:
                 for image in json_resp['items']:
                     image_name = '{}.jpg'.format(uuid.uuid4())
-                    print('IMAGE NAME: {}'.format(image_name))
+                    logger.debug(f'[TASKS]: {image_name}')
                     await self.download_image(session, image, image_name)
                     try:
                         await db.add_image(conn, image_name)
-                        print('SUCCESS')
+                        logger.debug('[TASKS] ADD IMAGE: SUCCESS')
                     except db.ImageLimitExceeded as e:
-                        print(f'{e}')
+                        logger.error(f'[TASKS] ADD IMAGE: ERROR - {e}')
                         await self.task_manager.start_background_task('periodic_image_count_check', self.app)
                         self.task.cancel()
 
@@ -89,8 +91,7 @@ class PeriodicImageCountCheck(BaseTask):
                 count = await db.image_count(conn)
                 await asyncio.sleep(5)
                 if count < 6:
-                    print('ALLOW TO DOWNLOAD NEW IMAGES! Image Count: {}'
-                          .format(count))
+                    logger.info(f'[TASKS] ALLOW TO DOWNLOAD NEW IMAGES. IMAGE COUNT: {count}')
                     self.task.cancel()
                     await self.task_manager.start_background_task(self.app)
-                print('NOT YET')
+                logger.debug(f'[TASKS] IMAGE TABLE HAVE MAX ITEM VALUE')
