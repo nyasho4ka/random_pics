@@ -7,7 +7,6 @@ from random_pics import db
 from random_pics.settings import config
 
 logger = logging.getLogger('dev')
-# logger.setLevel(logging.DEBUG)
 
 GOOGLE_SEARCH_API_URL = config['google_search_api']['url']
 CATEGORIES = config['google_search_api']['categories']
