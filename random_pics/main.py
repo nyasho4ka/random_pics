@@ -6,6 +6,7 @@ from random_pics.routes import setup_routes
 from random_pics.settings import config, logger_config, BASE_DIR
 from random_pics.db import init_pg, close_pg
 from random_pics.background.manager import background_task_manager
+from random_pics import middlewares as mw
 
 logging.config.dictConfig(logger_config)
 

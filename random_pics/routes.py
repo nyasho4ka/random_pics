@@ -1,4 +1,4 @@
-from views import (
+from random_pics.views import (
     GetNextImageView, ConfirmReceiptView
 )
 

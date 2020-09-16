@@ -82,13 +82,7 @@ class ServiceNotFound(Exception):
 
 # Queries
 async def get_next_image(conn, service_name):
-    result = await conn.execute(
-        service.select()
-        .where(service.c.name == service_name))
-
-    service_record = await result.first()
-    if service_record is None:
-        raise ServiceNotFound('there is no any service with {} in database'.format(service_name))
+    service_record = await get_service_by_name(conn, service_name)
     last_id = service_record.get('last_checkout_id')
 
     result = await conn.execute(
@@ -109,11 +103,25 @@ async def get_next_image(conn, service_name):
 
 
 async def service_last_checkout_update(conn, service_name, last_id):
-    await conn.execute(
+    result = await conn.execute(
         service.update()
         .values(last_checkout_id=last_id)
         .where(service.c.name == service_name)
     )
+
+    if result.rowcount == 0:
+        raise ServiceNotFound('there is no any service with {} in database'.format(service_name))
+
+
+async def get_service_by_name(conn, service_name):
+    result = await conn.execute(
+        service.select()
+        .where(service.c.name == service_name))
+
+    service_record = await result.first()
+    if service_record is None:
+        raise ServiceNotFound('there is no any service with {} in database'.format(service_name))
+    return service_record
 
 
 async def get_last_image_id(conn):
